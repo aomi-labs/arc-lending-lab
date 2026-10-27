@@ -41,10 +41,17 @@ bun run dev
 
 Environment variables are all optional. The app ships with the public Arc Testnet deployments built in (`src/lib/deployments.ts`), so it runs without an `.env`. Set these (see `.env.example`) only to point at other deployments:
 
+**Arc Testnet (chain 5042002) — default network:**
 - `VITE_VULNERABLE_MARKET_ADDRESS`: address of the vulnerable market on Arc Testnet.
 - `VITE_VULNERABLE_MARKET_TX`: its deployment transaction hash (optional, shown in Evidence).
 - `VITE_FIXED_MARKET_ADDRESS`: address of the patched market on Arc Testnet.
 - `VITE_FIXED_MARKET_TX`: its deployment transaction hash (optional, shown in Evidence).
+
+**Arc mainnet (chain 5042) — optional, no address built in:**
+- `VITE_MAINNET_FIXED_MARKET_ADDRESS`: address of the patched market on Arc mainnet.
+- `VITE_MAINNET_FIXED_MARKET_TX`: its deployment transaction hash (optional).
+- `VITE_MAINNET_VULNERABLE_MARKET_ADDRESS`: leave empty. The vulnerable contract must never hold real value on mainnet.
+- `VITE_MAINNET_VULNERABLE_MARKET_TX`: leave empty.
 
 You can also paste different addresses in the app under Deployment addresses.
 

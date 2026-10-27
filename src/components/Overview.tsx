@@ -1,6 +1,5 @@
 import { ExternalLink, Loader2 } from 'lucide-react'
 import { TokenUSDC } from '@web3icons/react'
-import { arcTestnet } from 'viem/chains'
 import { buildAddressExplorerUrl } from '@/onchain-facts'
 import { fmtUsdc } from '@/lib/format'
 import { shortAddress } from '@/lib/errors'
@@ -13,6 +12,9 @@ interface Props {
   state: MarketState
   connected: boolean
   walletBalance: bigint | undefined
+  chainId: number
+  /** When true the market address came from config but was empty — mainnet not deployed yet. */
+  notDeployedYet?: boolean
 }
 
 function Stat({ label, value, hint }: { label: string; value: string; hint?: string }) {
@@ -34,10 +36,11 @@ function Stat({ label, value, hint }: { label: string; value: string; hint?: str
   )
 }
 
-export function Overview({ variant, address, state, connected, walletBalance }: Props) {
+export function Overview({ variant, address, state, connected, walletBalance, chainId, notDeployedYet }: Props) {
   const info = VARIANTS[variant]
   const mismatch = state.status === 'ready' && state.isPatched !== info.expectedPatched
   const mine = (raw: bigint | undefined) => (connected ? fmtUsdc(raw) : '--')
+  const networkLabel = chainId === 5042 ? 'Arc mainnet' : 'Arc Testnet'
 
   return (
     <section className="card p-5" aria-label="Market balances">
@@ -46,9 +49,9 @@ export function Overview({ variant, address, state, connected, walletBalance }: 
           <TokenUSDC variant="branded" size={22} />
           <h2 className="display text-lg font-semibold">{info.contractName}</h2>
         </div>
-        {address && (
+        {address && !notDeployedYet && (
           <a
-            href={buildAddressExplorerUrl(arcTestnet.id, address)}
+            href={buildAddressExplorerUrl(chainId, address)}
             target="_blank"
             rel="noopener noreferrer"
             className="mono inline-flex items-center gap-1 text-xs"
@@ -59,19 +62,25 @@ export function Overview({ variant, address, state, connected, walletBalance }: 
         )}
       </div>
 
-      {state.status === 'no-address' && (
+      {notDeployedYet && (
+        <p className="mt-3 text-sm" style={{ color: 'var(--muted)' }}>
+          Not deployed on Arc mainnet yet. Add an address under Deployment addresses below.
+        </p>
+      )}
+      {!notDeployedYet && state.status === 'no-address' && (
         <p className="mt-3 text-sm" style={{ color: 'var(--muted)' }}>
           No address configured for this variant. Add one under Deployment addresses below.
         </p>
       )}
-      {state.status === 'loading' && (
+      {!notDeployedYet && state.status === 'loading' && (
         <p className="mt-3 flex items-center gap-2 text-sm" style={{ color: 'var(--muted)' }}>
-          <Loader2 className="size-4 animate-spin" aria-hidden /> Reading market state from Arc Testnet...
+          <Loader2 className="size-4 animate-spin" aria-hidden /> Reading market state from {networkLabel}...
         </p>
       )}
-      {state.status === 'no-contract' && (
+      {!notDeployedYet && state.status === 'no-contract' && (
         <p className="mt-3 text-sm" style={{ color: 'var(--danger)' }}>
-          No compatible contract answered at this address on Arc Testnet. Check the address under Deployment addresses.
+          No compatible contract answered at this address on {networkLabel}. Check the address under Deployment
+          addresses.
         </p>
       )}
       {mismatch && (

@@ -1,7 +1,6 @@
 import { ExternalLink, Loader2 } from 'lucide-react'
 import { isAddress } from 'viem'
 import { useAccount } from 'wagmi'
-import { arcTestnet } from 'viem/chains'
 import { buildTxExplorerUrl } from '@/onchain-facts'
 import { useMarketTx } from '@/hooks/useMarketTx'
 import type { MarketState } from '@/hooks/useMarketState'
@@ -10,18 +9,27 @@ import { ActionCard } from './ActionCard'
 interface Props {
   address: string
   state: MarketState
+  chainId: number
+  /** When true the market is not deployed — all controls show a "not deployed" reason. */
+  notDeployedYet?: boolean
 }
 
 const min = (a: bigint, b: bigint) => (a < b ? a : b)
 
 /** Normal, honest-user controls only. Exploit sequences are described in the bug panel, never wired to buttons. */
-export function Controls({ address, state }: Props) {
+export function Controls({ address, state, chainId, notDeployedYet }: Props) {
   const { address: account, isConnected } = useAccount()
   const market = isAddress(address) ? (address) : undefined
-  const tx = useMarketTx(market, state.refetch)
+  const tx = useMarketTx(market, state.refetch, chainId)
 
   const busy = tx.isSigning || tx.isConfirming
-  const reason = !isConnected ? 'Connect wallet first' : state.status !== 'ready' ? 'Market unavailable' : undefined
+  const reason = notDeployedYet
+    ? 'Not deployed on this network'
+    : !isConnected
+      ? 'Connect wallet first'
+      : state.status !== 'ready'
+        ? 'Market unavailable'
+        : undefined
 
   const supplied = state.supplyBalance ?? 0n
   const withdrawableSupply = min(supplied, state.availableLiquidity ?? 0n)
@@ -36,8 +44,8 @@ export function Controls({ address, state }: Props) {
         </span>
       </div>
       <p className="mt-1 text-xs" style={{ color: 'var(--subtle)' }}>
-        Every amount is native testnet USDC. Supply, deposit and repay send value with the transaction; withdraw and
-        borrow move funds out of the market.
+        Every amount is native USDC. Supply, deposit and repay send value with the transaction; withdraw and borrow
+        move funds out of the market.
       </p>
 
       <div className="mt-4 grid gap-3 md:grid-cols-2">
@@ -112,7 +120,7 @@ export function Controls({ address, state }: Props) {
             <a
               className="inline-flex items-center gap-1 text-xs"
               style={{ color: 'var(--accent)' }}
-              href={buildTxExplorerUrl(arcTestnet.id, tx.pending.hash)}
+              href={buildTxExplorerUrl(chainId, tx.pending.hash)}
               target="_blank"
               rel="noopener noreferrer"
             >
@@ -131,7 +139,7 @@ export function Controls({ address, state }: Props) {
             <a
               className="inline-flex items-center gap-1 text-xs"
               style={{ color: 'var(--accent)' }}
-              href={buildTxExplorerUrl(arcTestnet.id, tx.lastConfirmed.hash)}
+              href={buildTxExplorerUrl(chainId, tx.lastConfirmed.hash)}
               target="_blank"
               rel="noopener noreferrer"
             >

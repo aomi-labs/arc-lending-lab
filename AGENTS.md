@@ -1,6 +1,6 @@
 # Arc Lending Lab
 
-Project memory. Educational, deliberately vulnerable native-USDC lending market + patched comparison, for fuzzer benchmarking. Test funds only; Arc Testnet only; no mainnet.
+Project memory. Educational, deliberately vulnerable native-USDC lending market + patched comparison, for fuzzer benchmarking. Default network: Arc Testnet. An optional Arc mainnet view is available via a Testnet/Mainnet toggle in the header; mainnet deployments come only from VITE_MAINNET_* env vars (none built in). The vulnerable contract must never be deployed to mainnet.
 
 ## Tech Stack
 - Frontend: React 18, Vite, TypeScript, Tailwind, wagmi v2, viem, ConnectKit
@@ -18,8 +18,12 @@ Project memory. Educational, deliberately vulnerable native-USDC lending market 
 - FixedLabLendingMarket: 0x0e813ccf3a9bcf05df1cd39e2f848fedc6cf6129 (tx 0x89092a77f89f3171e08a2d95cd0f36885cdf41962928de7123587608613c13e4)
 Default addresses and hashes are built into `src/lib/deployments.ts`; `VITE_*` keys (see `.env.example`) override them.
 
+## Deployments (Arc mainnet, chain ID 5042)
+- None built in. Set `VITE_MAINNET_FIXED_MARKET_ADDRESS` (and optionally `_TX`) to enable the mainnet view.
+- Leave `VITE_MAINNET_VULNERABLE_MARKET_ADDRESS` empty — the vulnerable contract must never hold real value on mainnet.
+
 ## Key Files
-- `src/App.tsx`, `src/components/`, `src/hooks/useMarketState.ts`, `src/hooks/useMarketTx.ts`, `src/lib/`
+- `src/App.tsx`, `src/components/`, `src/hooks/useMarketState.ts`, `src/hooks/useMarketTx.ts`, `src/lib/`, `src/lib/network.ts` (NetworkContext, NetworkId, useNetwork)
 - `docs/FUZZING.md`, `artifacts/compiled/*.json`, `artifacts/test-logs/forge-test-vv.log`
 
 ## To Run

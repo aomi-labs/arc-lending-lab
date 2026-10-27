@@ -1,7 +1,6 @@
 import { useCallback, useState } from 'react'
 import type { Address, Hash } from 'viem'
 import { usePublicClient, useAccount, useSwitchChain, useWriteContract } from 'wagmi'
-import { arcTestnet } from 'viem/chains'
 import { toast } from 'sonner'
 import { marketAbi } from '@/lib/abi'
 import { parseTxError } from '@/lib/errors'
@@ -19,12 +18,12 @@ interface Tracked {
   hash: Hash
 }
 
-/** Sends one market write at a time, switching to Arc Testnet first and refetching once the receipt is real. */
-export function useMarketTx(market: Address | undefined, onConfirmed: () => void) {
-  const { address, chainId, isConnected } = useAccount()
+/** Sends one market write at a time, switching to the selected chain first and refetching once the receipt is real. */
+export function useMarketTx(market: Address | undefined, onConfirmed: () => void, chainId: number) {
+  const { address, chainId: walletChainId, isConnected } = useAccount()
   const { switchChainAsync } = useSwitchChain()
   const { writeContractAsync, isPending: isSigning } = useWriteContract()
-  const publicClient = usePublicClient({ chainId: arcTestnet.id })
+  const publicClient = usePublicClient({ chainId })
   const [pending, setPending] = useState<Tracked | null>(null)
   const [lastConfirmed, setLastConfirmed] = useState<Tracked | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -35,11 +34,11 @@ export function useMarketTx(market: Address | undefined, onConfirmed: () => void
       setError(null)
       let tracked: Tracked | null = null
       try {
-        if (chainId !== arcTestnet.id) await switchChainAsync({ chainId: arcTestnet.id })
+        if (walletChainId !== chainId) await switchChainAsync({ chainId })
         const hash = await writeContractAsync({
           address: market,
           abi: marketAbi,
-          chainId: arcTestnet.id,
+          chainId,
           functionName,
           args,
           value,
@@ -61,7 +60,7 @@ export function useMarketTx(market: Address | undefined, onConfirmed: () => void
         if (tracked) onConfirmed()
       }
     },
-    [market, isConnected, address, chainId, publicClient, switchChainAsync, writeContractAsync, onConfirmed],
+    [market, isConnected, address, walletChainId, chainId, publicClient, switchChainAsync, writeContractAsync, onConfirmed],
   )
 
   return { send, isSigning, isConfirming: Boolean(pending), pending, lastConfirmed, error }
