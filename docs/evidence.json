@@ -1,0 +1,88 @@
+{
+  "schema": "arc-lending-lab/evidence/v1",
+  "network": {
+    "name": "Arc Testnet",
+    "chainId": 5042002
+  },
+  "publicLinks": {
+    "app": "https://arc-lending-lab.vercel.app",
+    "repository": "https://github.com/aomi-labs/arc-lending-lab"
+  },
+  "aomiCampaigns": [
+    {
+      "target": "LabLendingMarket (vulnerable)",
+      "targetAddress": "0xb4c00fc759aeff83f693f7c24420771d84e65a77",
+      "campaignId": "0x0d19bafcf5fd5acff8a0b720571a7fc34a886893b931c26ce00efb76d970e851",
+      "status": "interrupted",
+      "completedAudit": false,
+      "executions": 21,
+      "corpus": 4,
+      "round": 6,
+      "interruptionNote": "The overall agent turn failed after round 6.",
+      "findings": [
+        {
+          "property": "attacker cannot withdraw another user's supply",
+          "maps_to_planted_defect": "1 (withdrawSupply authorization)",
+          "status": "confirmed",
+          "reproductions": 2,
+          "environment": "held testnet fork (no live broadcast)",
+          "minimizedTrace": [
+            {
+              "actor": "victim",
+              "call": "supply()",
+              "valueAtomic": "10000000000000000000"
+            },
+            {
+              "actor": "attacker",
+              "call": "withdrawSupply(victim, 10000000000000000000)"
+            }
+          ],
+          "observed": "attacker balance +10 USDC; victim balance -10 USDC",
+          "units": "native USDC, 18 decimals (1 USDC = 1e18)"
+        }
+      ],
+      "notFindings": [
+        {
+          "reportedTrace": "untracked borrow",
+          "reason": "the borrow call failed",
+          "isFinding": false
+        }
+      ]
+    },
+    {
+      "target": "FixedLabLendingMarket (patched)",
+      "targetAddress": "0x0e813ccf3a9bcf05df1cd39e2f848fedc6cf6129",
+      "status": "pending",
+      "note": "No result supplied yet."
+    }
+  ],
+  "plantedDefects": [
+    {
+      "id": 1,
+      "function": "withdrawSupply",
+      "aomi": "confirmed (interrupted campaign)",
+      "foundryCovered": true
+    },
+    {
+      "id": 2,
+      "function": "borrowUntracked",
+      "aomi": "no finding",
+      "foundryCovered": true,
+      "note": "ground-truth fixture"
+    },
+    {
+      "id": 3,
+      "function": "withdrawCollateral",
+      "aomi": "no finding",
+      "foundryCovered": true,
+      "note": "ground-truth fixture"
+    }
+  ],
+  "caveats": [
+    "Confirmed individual finding from an interrupted campaign, not a completed audit.",
+    "Only planted defect 1 is an Aomi finding. Defects 2 and 3 are ground-truth fixtures covered by Foundry tests, not Aomi findings.",
+    "The reported untracked-borrow trace had a failed borrow and is not a finding.",
+    "The patched-contract campaign is pending.",
+    "FixedLabLendingMarket is an unaudited comparison fixture, not a safety claim."
+  ]
+}
