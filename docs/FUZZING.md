@@ -5,7 +5,7 @@ Ground-truth fixtures for benchmarking a stateful fuzzer (such as Aomi) against 
 **Rules of engagement**
 
 - Fuzzing is **fork-only**. Run against a local fork of Arc Testnet or a fresh local deploy. Never broadcast any trace below to a live network, and never use mainnet.
-- The traces and "expected" outcomes below are **fixtures written by the benchmark author**. They are **not Aomi findings**. No Aomi campaign has been run against these contracts yet.
+- The traces and "expected" outcomes below are **fixtures written by the benchmark author**. They are ground truth, not Aomi findings. The only recorded Aomi result is the single confirmed finding for bug 1 in [`EVIDENCE.md`](EVIDENCE.md), from an interrupted campaign (not a completed audit). Bugs 2 and 3 are covered by Foundry tests only.
 - `FixedLabLendingMarket` only repairs the three known defects. It is unaudited and is not claimed to be safe.
 - Both contracts are intentionally vulnerable or unaudited; use test funds only.
 
@@ -96,6 +96,26 @@ Per-bug isolation tests show that the repairs overlap on the bug 2 profit trace:
 - Repairing only bug 3 does not stop bug 2, because `debt` stays `0`, so there is nothing for the collateral check to block.
 
 The bug 2 profit trace is therefore blocked only when both repairs are present. The most specific bug 2 oracle is "`debt` did not increase after a successful `borrowUntracked`".
+
+## Recorded Aomi result (vulnerable market only)
+
+Campaign `0x0d19bafcf5fd5acff8a0b720571a7fc34a886893b931c26ce00efb76d970e851` against `0xb4c00fc759aeff83f693f7c24420771d84e65a77` (Arc Testnet, `LabLendingMarket`): 21 executions, corpus 4, round 6. Property "attacker cannot withdraw another user's supply" reproduced 2 times on a held testnet fork.
+
+Minimized trace, matching the bug 1 shape with different amounts:
+
+1. `victim`: `supply()` with value `10000000000000000000`
+2. `attacker`: `withdrawSupply(victim, 10000000000000000000)`
+
+Observed: attacker balance +10 USDC, victim balance -10 USDC.
+
+Caveats:
+
+- This is a **confirmed individual finding from an interrupted campaign, not a completed audit**. The overall agent turn failed after round 6.
+- A reported "untracked borrow" trace had a **failed borrow** and is **not a finding**.
+- Bugs 2 and 3 are **not Aomi findings**. They remain ground-truth fixtures covered by Foundry tests. All three defects were **not** found by Aomi.
+- The patched-contract campaign is **pending**; no result has been supplied.
+
+Details: [`EVIDENCE.md`](EVIDENCE.md), [`evidence.json`](evidence.json).
 
 ## Reproducing the local regression suite
 

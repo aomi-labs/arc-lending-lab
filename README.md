@@ -15,7 +15,15 @@ Built with [Arc Studio](https://studio.arc.io)
 
 Amounts are native USDC in 18-decimal units (1 USDC = 1e18 atomic units).
 
-Fuzzing is fork-only and never broadcasts exploits. The traces in the docs are fixtures with expected outcomes. They are not findings from any fuzzing campaign; no Aomi campaign has been run yet.
+Fuzzing is fork-only and never broadcasts exploits.
+
+## Fuzzing evidence
+
+- **Bug 1 (`withdrawSupply`):** confirmed by Aomi as an individual finding. The campaign was interrupted: it is not a completed audit. It ran 21 executions (corpus 4, round 6) against the Arc Testnet vulnerable market and reproduced "attacker cannot withdraw another user's supply" 2 times on a held testnet fork. Minimized trace: the victim supplies 10 native USDC, then the attacker withdraws the victim's 10 USDC.
+- **Bugs 2 and 3:** ground-truth fixtures covered by Foundry tests. They are not Aomi findings. A reported untracked-borrow trace had a failed borrow and is not a finding. No claim is made that all three bugs were found.
+- **Patched contract:** campaign pending.
+
+Full details: [`docs/EVIDENCE.md`](docs/EVIDENCE.md) and [`docs/evidence.json`](docs/evidence.json). Live app: https://arc-lending-lab.vercel.app. Repository: https://github.com/aomi-labs/arc-lending-lab.
 
 ## Tech stack
 
@@ -56,4 +64,5 @@ bun run export:clean      # clean copy in export/arc-lending-lab (no credentials
 - `artifacts/compiled/`: ABI and deployed bytecode for both contracts.
 - `artifacts/test-logs/`: exact test output.
 - `docs/FUZZING.md`: fuzzing guide.
+- `docs/EVIDENCE.md`, `docs/evidence.json`: recorded fuzzing results and caveats.
 - `src/`: web app.
