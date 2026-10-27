@@ -1,4 +1,5 @@
 import { isAddress } from 'viem'
+import type { NetworkId } from './network'
 
 export type VariantId = 'vulnerable' | 'patched'
 
@@ -36,6 +37,7 @@ export interface DeploymentRecord {
 }
 
 const STORAGE_KEY = 'arc-lending-lab:addresses:v1'
+const STORAGE_KEY_MAINNET = 'arc-lending-lab:addresses-mainnet:v1'
 
 const clean = (value: unknown): string => (typeof value === 'string' ? value.trim() : '')
 
@@ -54,6 +56,24 @@ export const DEFAULT_DEPLOYMENTS: Record<VariantId, DeploymentRecord> = {
   },
 }
 
+/**
+ * Arc mainnet deployments come exclusively from VITE_MAINNET_* environment variables.
+ * No address is hard-coded. When a variable is absent the record has an empty address,
+ * which the UI treats as "Not deployed on Arc mainnet yet".
+ */
+export function defaultMainnetDeployments(): Record<VariantId, DeploymentRecord> {
+  const env = import.meta.env as Record<string, string | undefined>
+  const pick = (addressKey: string, txKey: string): DeploymentRecord => {
+    const address = clean(env[addressKey])
+    const txHash = clean(env[txKey])
+    return { address, txHash: txHash || undefined }
+  }
+  return {
+    vulnerable: pick('VITE_MAINNET_VULNERABLE_MARKET_ADDRESS', 'VITE_MAINNET_VULNERABLE_MARKET_TX'),
+    patched: pick('VITE_MAINNET_FIXED_MARKET_ADDRESS', 'VITE_MAINNET_FIXED_MARKET_TX'),
+  }
+}
+
 /** VITE_ values win over the built-in fallbacks. An overridden address drops the fallback hash. */
 export function defaultDeployments(): Record<VariantId, DeploymentRecord> {
   const env = import.meta.env as Record<string, string | undefined>
@@ -70,9 +90,10 @@ export function defaultDeployments(): Record<VariantId, DeploymentRecord> {
   }
 }
 
-export function loadOverrides(): Partial<Record<VariantId, string>> {
+export function loadOverrides(network: NetworkId = 'testnet'): Partial<Record<VariantId, string>> {
+  const key = network === 'mainnet' ? STORAGE_KEY_MAINNET : STORAGE_KEY
   try {
-    const raw = window.localStorage.getItem(STORAGE_KEY)
+    const raw = window.localStorage.getItem(key)
     if (!raw) return {}
     const parsed: unknown = JSON.parse(raw)
     if (typeof parsed !== 'object' || parsed === null) return {}
@@ -87,9 +108,10 @@ export function loadOverrides(): Partial<Record<VariantId, string>> {
   }
 }
 
-export function saveOverrides(overrides: Partial<Record<VariantId, string>>): void {
+export function saveOverrides(overrides: Partial<Record<VariantId, string>>, network: NetworkId = 'testnet'): void {
+  const key = network === 'mainnet' ? STORAGE_KEY_MAINNET : STORAGE_KEY
   try {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(overrides))
+    window.localStorage.setItem(key, JSON.stringify(overrides))
   } catch {
     // Storage can be unavailable (private mode); the in-memory state still applies.
   }
@@ -97,12 +119,15 @@ export function saveOverrides(overrides: Partial<Record<VariantId, string>>): vo
 
 export function resolveDeployments(
   overrides: Partial<Record<VariantId, string>>,
+  network: NetworkId = 'testnet',
 ): Record<VariantId, DeploymentRecord> {
-  const defaults = defaultDeployments()
+  const defaults = network === 'mainnet' ? defaultMainnetDeployments() : defaultDeployments()
   const result = { ...defaults }
   for (const id of ['vulnerable', 'patched'] as const) {
     const override = overrides[id]
-    if (override && override.toLowerCase() !== defaults[id].address.toLowerCase()) {
+    if (!override) continue
+    const defaultAddr = defaults[id].address
+    if (!defaultAddr || override.toLowerCase() !== defaultAddr.toLowerCase()) {
       result[id] = { address: override }
     }
   }

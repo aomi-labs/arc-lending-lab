@@ -1,7 +1,6 @@
 import { useMemo } from 'react'
 import { isAddress, type Address } from 'viem'
 import { useReadContracts } from 'wagmi'
-import { arcTestnet } from 'viem/chains'
 import { marketAbi } from '@/lib/abi'
 
 const ZERO_ADDRESS: Address = '0x0000000000000000000000000000000000000000'
@@ -24,13 +23,13 @@ export interface MarketState {
 }
 
 /** Live reads for one market deployment, plus the connected account's positions. */
-export function useMarketState(address: string, account: Address | undefined): MarketState {
+export function useMarketState(address: string, account: Address | undefined, chainId: number): MarketState {
   const market = isAddress(address) ? address : undefined
   const user = account ?? ZERO_ADDRESS
   const target = market ?? ZERO_ADDRESS
 
   const contracts = useMemo(() => {
-    const base = { address: target, abi: marketAbi, chainId: arcTestnet.id } as const
+    const base = { address: target, abi: marketAbi, chainId } as const
     return [
       { ...base, functionName: 'isPatched' },
       { ...base, functionName: 'availableLiquidity' },
@@ -42,7 +41,7 @@ export function useMarketState(address: string, account: Address | undefined): M
       { ...base, functionName: 'debt', args: [user] },
       { ...base, functionName: 'maxBorrowable', args: [user] },
     ] as const
-  }, [target, user])
+  }, [target, user, chainId])
 
   const { data, isLoading, refetch } = useReadContracts({
     contracts,
