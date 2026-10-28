@@ -57,20 +57,33 @@ export const DEFAULT_DEPLOYMENTS: Record<VariantId, DeploymentRecord> = {
 }
 
 /**
- * Arc mainnet deployments come exclusively from VITE_MAINNET_* environment variables.
- * No address is hard-coded. When a variable is absent the record has an empty address,
- * which the UI treats as "Not deployed on Arc mainnet yet".
+ * Built-in Arc mainnet (chain ID 5042) deployments. VITE_MAINNET_* env vars override these.
+ * The vulnerable market must never hold real value on mainnet; its entry stays empty.
+ */
+export const DEFAULT_MAINNET_DEPLOYMENTS: Record<VariantId, DeploymentRecord> = {
+  vulnerable: { address: '' },
+  patched: {
+    address: '0xBA6CE9A25EA0A392519EdFc3D940dC4FF52616bA',
+    txHash: '0x7f3d7fff971e384e5aa36b69cd000dc2eb974481a0ec57f52f973e1d8342cf3f',
+  },
+}
+
+/**
+ * Arc mainnet deployments. VITE_MAINNET_* env vars win over the built-in fallbacks
+ * (same pattern as testnet). When a variable is absent the built-in default applies.
  */
 export function defaultMainnetDeployments(): Record<VariantId, DeploymentRecord> {
   const env = import.meta.env as Record<string, string | undefined>
-  const pick = (addressKey: string, txKey: string): DeploymentRecord => {
+  const pick = (id: VariantId, addressKey: string, txKey: string): DeploymentRecord => {
+    const fallback = DEFAULT_MAINNET_DEPLOYMENTS[id]
     const address = clean(env[addressKey])
-    const txHash = clean(env[txKey])
-    return { address, txHash: txHash || undefined }
+    if (!address) return { ...fallback, txHash: clean(env[txKey]) || fallback.txHash }
+    const sameAsFallback = address.toLowerCase() === fallback.address.toLowerCase()
+    return { address, txHash: clean(env[txKey]) || (sameAsFallback ? fallback.txHash : undefined) }
   }
   return {
-    vulnerable: pick('VITE_MAINNET_VULNERABLE_MARKET_ADDRESS', 'VITE_MAINNET_VULNERABLE_MARKET_TX'),
-    patched: pick('VITE_MAINNET_FIXED_MARKET_ADDRESS', 'VITE_MAINNET_FIXED_MARKET_TX'),
+    vulnerable: pick('vulnerable', 'VITE_MAINNET_VULNERABLE_MARKET_ADDRESS', 'VITE_MAINNET_VULNERABLE_MARKET_TX'),
+    patched: pick('patched', 'VITE_MAINNET_FIXED_MARKET_ADDRESS', 'VITE_MAINNET_FIXED_MARKET_TX'),
   }
 }
 

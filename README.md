@@ -47,9 +47,9 @@ Environment variables are all optional. The app ships with the public Arc Testne
 - `VITE_FIXED_MARKET_ADDRESS`: address of the patched market on Arc Testnet.
 - `VITE_FIXED_MARKET_TX`: its deployment transaction hash (optional, shown in Evidence).
 
-**Arc mainnet (chain 5042) — optional, no address built in:**
-- `VITE_MAINNET_FIXED_MARKET_ADDRESS`: address of the patched market on Arc mainnet.
-- `VITE_MAINNET_FIXED_MARKET_TX`: its deployment transaction hash (optional).
+**Arc mainnet (chain 5042) — built-in default for FixedLabLendingMarket:**
+- `VITE_MAINNET_FIXED_MARKET_ADDRESS`: overrides the built-in mainnet address (`0xBA6CE9A25EA0A392519EdFc3D940dC4FF52616bA`).
+- `VITE_MAINNET_FIXED_MARKET_TX`: overrides the built-in deploy tx hash (optional).
 - `VITE_MAINNET_VULNERABLE_MARKET_ADDRESS`: leave empty. The vulnerable contract must never hold real value on mainnet.
 - `VITE_MAINNET_VULNERABLE_MARKET_TX`: leave empty.
 

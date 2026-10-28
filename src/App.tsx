@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useAccount, useBalance } from 'wagmi'
 import { arcTestnet } from 'viem/chains'
 import { Banner } from '@/components/Banner'
@@ -19,6 +19,23 @@ import {
   type DeploymentRecord,
 } from '@/lib/deployments'
 import { NetworkContext, type NetworkId } from '@/lib/network'
+
+// localStorage key for persisted network selection
+const NETWORK_STORAGE_KEY = 'arc-lending-lab:network:v1'
+
+function resolveInitialNetwork(): NetworkId {
+  // URL param ?network=mainnet takes precedence over localStorage
+  try {
+    const param = new URLSearchParams(window.location.search).get('network')
+    if (param === 'mainnet') return 'mainnet'
+    if (param === 'testnet') return 'testnet'
+  } catch { /* SSR / no window */ }
+  try {
+    const stored = window.localStorage.getItem(NETWORK_STORAGE_KEY)
+    if (stored === 'mainnet') return 'mainnet'
+  } catch { /* storage unavailable */ }
+  return 'testnet'
+}
 
 // localStorage key for the tx hashes produced by wallet-initiated deploys
 const MAINNET_TX_KEY = 'arc-lending-lab:mainnet-tx:v1'
@@ -44,7 +61,7 @@ function saveMainnetTxHashes(hashes: Partial<Record<VariantId, string>>): void {
 
 export default function App() {
   const { address, isConnected } = useAccount()
-  const [network, setNetwork] = useState<NetworkId>('testnet')
+  const [network, setNetwork] = useState<NetworkId>(resolveInitialNetwork)
   const [variant, setVariant] = useState<VariantId>('patched')
   const [overrides, setOverrides] = useState(() => loadOverrides('testnet'))
   const [mainnetOverrides, setMainnetOverrides] = useState(() => loadOverrides('mainnet'))
@@ -54,6 +71,11 @@ export default function App() {
 
   const isMainnet = network === 'mainnet'
   const selectedChainId = isMainnet ? arcMainnet.id : arcTestnet.id
+
+  // Persist network selection to localStorage whenever it changes
+  useEffect(() => {
+    try { window.localStorage.setItem(NETWORK_STORAGE_KEY, network) } catch { /* unavailable */ }
+  }, [network])
 
   // When switching to mainnet force the variant to 'patched' — vulnerable is blocked there
   const handleSetNetwork = useCallback((n: NetworkId) => {
